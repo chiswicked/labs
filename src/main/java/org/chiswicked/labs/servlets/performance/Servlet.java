@@ -24,9 +24,10 @@
 
 package org.chiswicked.labs.servlets.performance;
 
+import org.chiswicked.labs.servlets.performance.services.GreetingService;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.core.io.ClassPathResource;
 
 import javax.servlet.ServletConfig;
@@ -42,48 +43,35 @@ import java.io.IOException;
  */
 public class Servlet extends HttpServlet {
 
-    private int count;
+    private GreetingService greetingService;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         // Initialise Spring Beans
-        BeanDefinitionRegistry beanFactory = new DefaultListableBeanFactory();
+
+        ClassPathXmlApplicationContext applicationContext = new ClassPathXmlApplicationContext("classpath:/applicationContext*");
+
+        BeanDefinitionRegistry beanFactory = (BeanDefinitionRegistry) applicationContext.getBeanFactory();
         XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(beanFactory);
         reader.loadBeanDefinitions(new ClassPathResource("spring/beans.xml"));
 
         // Retrieve beans
 
-        // Set up greeting service
+        greetingService = (GreetingService) applicationContext.getBean("greetingService");
 
         getServletContext().log("init() called");
-        count = 0;
     }
 
     @Override
-    protected void service(HttpServletRequest request, HttpServletResponse response)
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        getServletContext().log("service() called");
-        count++;
-        response.getWriter().write("Incrementing the count: count = " + count);
-    }
-
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        super.doGet(req, resp);
-
-
+//        resp.getWriter().write(greetingService.sayGreeting());
 
         ServletOutputStream out = resp.getOutputStream();
 
-        out.write((/* greetingService.sayGreeting() */ "Hello World???").getBytes());
+        out.write((greetingService.sayGreeting()).getBytes());
         out.flush();
         out.close();
     }
-
-    @Override
-    public void destroy() {
-        getServletContext().log("destroy() called");
-    }
-
 }
